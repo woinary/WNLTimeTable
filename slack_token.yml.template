@@ -1,0 +1,3 @@
+# Slack Token
+slackToken: "xoxb-XXXXXXXXXXXX-XXXXXXXXXXXXX-XXXXXXXXXXXXXXXXXXXXXXXX"
+slackChannel: "#weathernews_live_timetable"
