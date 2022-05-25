@@ -1,3 +1,5 @@
 WNLtimetable.code-workspace
 slack_token.yml
 go.sum
+.DS_Store
+WNLTimeTable

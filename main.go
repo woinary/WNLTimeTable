@@ -33,6 +33,7 @@ type Slack struct {
 var CasterList = map[string]string{
 	"ailin":      "山岸愛梨",
 	"hiyama2018": "檜山沙耶",
+	"kawabata":   "川畑玲",
 	"komaki2018": "駒木結衣",
 	"ohshima":    "大島璃音",
 	"sayane":     "江川清音",
