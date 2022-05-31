@@ -45,30 +45,45 @@ var CasterList = map[string]string{
 
 func main() {
 	// Slackトークンの取得
-	token_file, err := os.Open(Slack_Token_Filename)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err.Error())
-	}
-	defer token_file.Close()
-
 	var s Slack
-	if err := yaml.NewDecoder(token_file).Decode(&s); err != nil {
-		fmt.Fprintln(os.Stderr, err.Error())
-		os.Exit(1)
+
+	// トークンファイルの有無確認
+	_, err := os.Stat(Slack_Token_Filename)
+	if !os.IsNotExist(err) {
+		token_file, err := os.Open(Slack_Token_Filename)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "Slack token file Open error: "+err.Error())
+			os.Exit(1)
+		}
+		defer token_file.Close()
+
+		if err := yaml.NewDecoder(token_file).Decode(&s); err != nil {
+			fmt.Fprintln(os.Stderr, "Slack token file read error: "+err.Error())
+			os.Exit(2)
+		}
+		// fmt.Fprintln(os.Stderr, ">>>Slack Token(file):"+s.Token) // DEBUG
+	} else {
+		s.Token = os.Getenv("SLACK_TOKEN")
+		s.Channel = os.Getenv("SLACK_CHANNEL")
 	}
-	// fmt.Fprintln(os.Stderr, ">>>Slack Token:"+s.Token) // DEBUG
+
+	if s.Token == "" || s.Channel == "" {
+		fmt.Println("Cannot get Slack token")
+		os.Exit(3)
+		// fmt.Fprintln(os.Stderr, ">>>Slack Token(env):"+s.Token) // DEBUG
+	}
 
 	// 番組表の取得
 	resp, err := http.Get(WNLtimetable_URL)
 	if err != nil {
 		fmt.Println(err.Error())
-		os.Exit(2)
+		os.Exit(4)
 	}
 	defer resp.Body.Close()
 	byteArray, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Println(err.Error())
-		os.Exit(3)
+		os.Exit(5)
 	}
 
 	jsonBytes := ([]byte)(byteArray)
@@ -76,7 +91,7 @@ func main() {
 
 	if err := json.Unmarshal(jsonBytes, data); err != nil {
 		fmt.Println("JSON Unmarsharl error: ", err.Error())
-		os.Exit(4)
+		os.Exit(6)
 	}
 	// fmt.Fprintf(os.Stderr, "get %d timetables.\n", len(*data)) //DEBUG
 
@@ -95,9 +110,12 @@ func main() {
 
 		// 今日の日付を取得
 		today := time.Now()
+		if day_offset > 0 {
+			today = today.Add(time.Hour * 24 * time.Duration(day_offset))
+		}
 
 		// 日付を付ける
-		date_time := fmt.Sprintf("%04d/%02d/%02d %s", today.Year(), today.Month(), today.Day()+day_offset, (*data)[i].Hour)
+		date_time := fmt.Sprintf("%04d/%02d/%02d %s", today.Year(), today.Month(), today.Day(), (*data)[i].Hour)
 
 		// キャスター名変換
 		caster_name, ok := CasterList[(*data)[i].Caster]
@@ -113,5 +131,7 @@ func main() {
 	ch := slack.New(s.Token)
 	if _, _, err := ch.PostMessage(s.Channel, slack.MsgOptionText(output, true)); err != nil {
 		fmt.Fprintln(os.Stderr, err.Error())
+		os.Exit(7)
 	}
+	os.Exit(0)
 }
