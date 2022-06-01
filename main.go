@@ -2,10 +2,12 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/slack-go/slack"
@@ -15,6 +17,8 @@ import (
 const WNLtimetable_URL = "http://smtgvs.weathernews.jp/a/solive_timetable/timetable.json"
 const WNLtitle = "ウェザーニュースLiVE"
 const Slack_Token_Filename = "slack_token.yml"
+const SEPALATE_CHAR = "-"
+const SEPALATE_LINE_WIDTH = 80
 
 // WNL番組表JSON構造体
 type WNLtimetable []struct {
@@ -43,23 +47,20 @@ var CasterList = map[string]string{
 	"yuki":       "内田侑希",
 }
 
-func main() {
-	// Slackトークンの取得
+// スラック情報の取得
+func check_slack_info() (Slack, error) {
 	var s Slack
-
-	// トークンファイルの有無確認
+	// Slack情報ファイルの有無確認
 	_, err := os.Stat(Slack_Token_Filename)
 	if !os.IsNotExist(err) {
 		token_file, err := os.Open(Slack_Token_Filename)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, "Slack token file Open error: "+err.Error())
-			os.Exit(1)
+			return s, errors.New("Slack token file Open error: " + err.Error())
 		}
 		defer token_file.Close()
 
 		if err := yaml.NewDecoder(token_file).Decode(&s); err != nil {
-			fmt.Fprintln(os.Stderr, "Slack token file read error: "+err.Error())
-			os.Exit(2)
+			return s, errors.New("Slack token file read error: " + err.Error())
 		}
 		// fmt.Fprintln(os.Stderr, ">>>Slack Token(file):"+s.Token) // DEBUG
 	} else {
@@ -68,39 +69,44 @@ func main() {
 	}
 
 	if s.Token == "" || s.Channel == "" {
-		fmt.Println("Cannot get Slack token")
-		os.Exit(3)
+		return s, errors.New("Cannot get Slack token")
 		// fmt.Fprintln(os.Stderr, ">>>Slack Token(env):"+s.Token) // DEBUG
 	}
+	return s, nil
+}
 
-	// 番組表の取得
+// 番組表の取得
+func get_time_table() (*WNLtimetable, error) {
 	resp, err := http.Get(WNLtimetable_URL)
 	if err != nil {
-		fmt.Println(err.Error())
-		os.Exit(4)
+		return nil, errors.New("Cannot get timetable: " + err.Error())
 	}
 	defer resp.Body.Close()
 	byteArray, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Println(err.Error())
-		os.Exit(5)
+		return nil, errors.New("Cannot get timetable: " + err.Error())
 	}
 
 	jsonBytes := ([]byte)(byteArray)
 	data := new(WNLtimetable)
 
 	if err := json.Unmarshal(jsonBytes, data); err != nil {
-		fmt.Println("JSON Unmarsharl error: ", err.Error())
-		os.Exit(6)
+		return nil, errors.New("Cannot parse JSON data: " + err.Error())
 	}
 	// fmt.Fprintf(os.Stderr, "get %d timetables.\n", len(*data)) //DEBUG
 
+	return data, nil
+}
+
+// 番組表の作成
+func make_time_table(data *WNLtimetable) string {
 	day_offset := 0
 	output := ""
 	for i := 0; i < len(*data); i++ {
 		// 日付の補正
 		if (*data)[i].Hour == "00:00" {
 			day_offset = 1
+			output += strings.Repeat(SEPALATE_CHAR, SEPALATE_LINE_WIDTH) + "\n"
 		}
 
 		// タイトルが空の行はスキップする
@@ -126,12 +132,53 @@ func main() {
 		// メッセージを作成
 		output += fmt.Sprintf("%s %s %s(%s)\n", date_time, (*data)[i].Title, caster_name, (*data)[i].Caster)
 	}
-	// fmt.Print(output)
-	// Slack投稿
+
+	return output
+}
+
+// Slack投稿
+func put_slack(s Slack, output string) error {
 	ch := slack.New(s.Token)
 	if _, _, err := ch.PostMessage(s.Channel, slack.MsgOptionText(output, true)); err != nil {
-		fmt.Fprintln(os.Stderr, err.Error())
-		os.Exit(7)
+		return errors.New("Cannot put to Slack: " + err.Error())
+	}
+	return nil
+}
+
+func main() {
+	// デバッグかどうか
+	debug := false
+	env_debug := os.Getenv("DEBUG")
+	if strings.ToUpper(env_debug) == "TRUE" {
+		debug = true
+	}
+
+	// Slack情報の取得
+	s, err := check_slack_info()
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
+
+	// 番組表の取得
+	data, err := get_time_table()
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(2)
+	}
+
+	// 番組表の整形
+	output := make_time_table(data)
+
+	// 番組表の出力
+	if debug {
+		fmt.Print(output)
+	} else {
+		// Slack投稿
+		if err := put_slack(s, output); err != nil {
+			fmt.Println(err.Error())
+			os.Exit(3)
+		}
 	}
 	os.Exit(0)
 }
