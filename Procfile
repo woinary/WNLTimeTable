@@ -1,1 +1,1 @@
-Worker: ./WNLTimeTable
+Worker: bin/WNLtimetable
