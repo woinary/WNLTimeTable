@@ -45,9 +45,10 @@ var CasterList = map[string]string{
 	"takayama":   "高山奈々",
 	"tokita":     "戸北美月",
 	"yuki":       "内田侑希",
+	"kobayashi":  "小林李衣奈",
 }
 
-// スラック情報の取得
+// Slack情報の取得
 func check_slack_info() (Slack, error) {
 	var s Slack
 	// Slack情報ファイルの有無確認
@@ -115,7 +116,9 @@ func make_time_table(data *WNLtimetable) string {
 		}
 
 		// 今日の日付を取得
-		today := time.Now()
+		tz_JST := time.FixedZone("JST", +9*60*60)
+
+		today := time.Now().UTC().In(tz_JST)
 		if day_offset > 0 {
 			today = today.Add(time.Hour * 24 * time.Duration(day_offset))
 		}
