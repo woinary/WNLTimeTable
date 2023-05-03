@@ -48,6 +48,7 @@ var CasterList = map[string]string{
 	"kobayashi":  "小林李衣奈",
 	"ogawa":      "小川千奈",
 	"uozumi":     "魚住茉由",
+	"matsu":      "松雪彩花",
 }
 
 // Slack情報の取得
