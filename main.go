@@ -51,6 +51,7 @@ var CasterList = map[string]string{
 	"matsu":       "松雪彩花",
 	"okamoto2023": "岡本結子リサ",
 	"aohara2023":  "青原桃香",
+	"fukuyoshi":   "福吉貴文",
 }
 
 // Slack情報の取得
@@ -75,7 +76,7 @@ func check_slack_info() (Slack, error) {
 	}
 
 	if s.Token == "" || s.Channel == "" {
-		return s, errors.New("Cannot get Slack token")
+		return s, errors.New("cannot get Slack token")
 		// fmt.Fprintln(os.Stderr, ">>>Slack Token(env):"+s.Token) // DEBUG
 	}
 	return s, nil
