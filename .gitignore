@@ -3,3 +3,4 @@ slack_token.yml
 #go.sum
 .DS_Store
 WNLTimeTable
+WNLTimeTable.code-workspace
