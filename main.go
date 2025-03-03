@@ -53,15 +53,12 @@ type Slack struct {
 // キャスターリスト
 var casterList = map[string]string{
 	"ailin":       "山岸愛梨",
-	"hiyama2018":  "檜山沙耶",
 	"kawabata":    "川畑玲",
 	"komaki2018":  "駒木結衣",
-	"ohshima":     "大島璃音",
 	"sayane":      "江川清音",
 	"shirai":      "白井ゆかり",
 	"takayama":    "高山奈々",
 	"tokita":      "戸北美月",
-	"yuki":        "内田侑希",
 	"kobayashi":   "小林李衣奈",
 	"ogawa":       "小川千奈",
 	"uozumi":      "魚住茉由",
@@ -77,6 +74,7 @@ func loadSlackInfo() (Slack, error) {
 	// Slack情報ファイルの有無確認
 	_, err := os.Stat(SLACK_TOKEN_FILENAME)
 	if !os.IsNotExist(err) {
+		// Slack情報ファイルが存在した場合
 		tokenFile, err := os.Open(SLACK_TOKEN_FILENAME)
 		if err != nil {
 			return s, fmt.Errorf("failed to open file(%s): %w", SLACK_TOKEN_FILENAME, err)
@@ -87,9 +85,13 @@ func loadSlackInfo() (Slack, error) {
 			return s, fmt.Errorf("failed to read Slack token file(%s): %w", SLACK_TOKEN_FILENAME, err)
 		}
 		// fmt.Fprintln(os.Stderr, ">>>Slack Token(file):"+s.Token) // DEBUG
-	} else {
+	} else if os.IsNotExist(err) {
+		// Slack情報ファイルが存在しない場合
 		s.Token = os.Getenv("SLACK_TOKEN")
 		s.Channel = os.Getenv("SLACK_CHANNEL")
+	} else {
+		// その他のエラー
+		return s, fmt.Errorf("failed to get Slack token file(%s): %w", SLACK_TOKEN_FILENAME, err)
 	}
 
 	if s.Token == "" || s.Channel == "" {
