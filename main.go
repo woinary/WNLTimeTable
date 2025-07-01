@@ -52,20 +52,22 @@ type Slack struct {
 
 // キャスターリスト
 var casterList = map[string]string{
-	"ailin":       "山岸愛梨",
-	"kawabata":    "川畑玲",
-	"komaki2018":  "駒木結衣",
-	"sayane":      "江川清音",
-	"shirai":      "白井ゆかり",
-	"takayama":    "高山奈々",
-	"tokita":      "戸北美月",
-	"kobayashi":   "小林李衣奈",
-	"ogawa":       "小川千奈",
-	"uozumi":      "魚住茉由",
-	"matsu":       "松雪彩花",
-	"okamoto2023": "岡本結子リサ",
-	"aohara2023":  "青原桃香",
-	"fukuyoshi":   "福吉貴文",
+	"ailin":         "山岸愛梨",
+	"kawabata":      "川畑玲",
+	"komaki2018":    "駒木結衣",
+	"sayane":        "江川清音",
+	"shirai":        "白井ゆかり",
+	"takayama":      "高山奈々",
+	"tokita":        "戸北美月",
+	"kobayashi":     "小林李衣奈",
+	"ogawa":         "小川千奈",
+	"uozumi":        "魚住茉由",
+	"matsu":         "松雪彩花",
+	"okamoto2023":   "岡本結子リサ",
+	"aohara2023":    "青原桃香",
+	"fukuyoshi":     "福吉貴文",
+	"matsumoto2025": "松本真央",
+	"tanabe2025":    "田辺真南葉",
 }
 
 // Slack情報の取得
